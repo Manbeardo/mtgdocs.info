@@ -1,6 +1,8 @@
 package gae
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"text/template"
@@ -14,14 +16,16 @@ func init() {
 	readFiles()
 
 	ws := new(restful.WebService).Path("/")
-	ws.Route(ws.GET("/cr/").To(serveCR))
+
+	paramDisplay := ws.QueryParameter("Display", "display mode (HTML, TXT, or JSON)").DefaultValue("HTML")
+
+	ws.Route(ws.GET("/").To(serveIndex))
+	ws.Route(ws.GET("/cr").
+		Param(paramDisplay).
+		To(serveCR))
 	ws.Route(ws.GET("/cr/{Title}").
-		Param(ws.PathParameter("Title", "the title of the rule")).
-		Param(ws.QueryParameter("Display", "the display mode").AllowableValues(map[string]string{
-		"HTML": "HTML",
-		"TXT":  "TXT",
-		"JSON": "JSON",
-	}).DefaultValue("HTML")).
+		Param(ws.PathParameter("Title", "title of the rule")).
+		Param(paramDisplay).
 		To(serveCR))
 
 	restful.Add(ws)
@@ -34,6 +38,7 @@ func init() {
 
 var cr parse.ComprehensiveRules
 var crTpl = template.Must(template.ParseFiles("etc/cr.tpl"))
+var index []byte
 
 func readFiles() {
 	file, err := os.Open("etc/C15.cr.txt")
@@ -42,9 +47,27 @@ func readFiles() {
 	}
 	defer file.Close()
 	cr = parse.ParseCR(file)
+
+	indexBytes, err := ioutil.ReadFile("etc/index.html")
+	if err != nil {
+		panic(err)
+	}
+	index = indexBytes
+}
+
+func serveIndex(req *restful.Request, resp *restful.Response) {
+	resp.Write(index)
 }
 
 func serveCR(req *restful.Request, resp *restful.Response) {
+	display := req.QueryParameter("Display")
+	if display == "" {
+		display = "HTML"
+	} else if display != "HTML" && display != "JSON" && display != "TXT" {
+		resp.WriteErrorString(http.StatusBadRequest, fmt.Sprintf("illegal display mode: %v", display))
+		return
+	}
+
 	var rule *parse.Rule
 	if title := parse.Title(req.PathParameter("Title")); title == "" {
 		rule = cr["HEAD"]
@@ -56,5 +79,11 @@ func serveCR(req *restful.Request, resp *restful.Response) {
 		resp.WriteErrorString(http.StatusNotFound, "no rule with that title found")
 	}
 
-	crTpl.Execute(resp, rule.CompleteText())
+	if display == "HTML" {
+		crTpl.Execute(resp, rule.CompleteText()) // TODO: make a better HTML template
+	} else if display == "TXT" {
+		crTpl.Execute(resp, rule.CompleteText())
+	} else if display == "JSON" {
+		resp.WriteAsJson(rule)
+	}
 }
