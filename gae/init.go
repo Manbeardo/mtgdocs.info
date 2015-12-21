@@ -3,6 +3,7 @@ package gae
 import (
 	"net/http"
 	"os"
+	"text/template"
 
 	"github.com/Manbeardo/mtgdocs.info/parse"
 	"github.com/emicklei/go-restful"
@@ -21,6 +22,7 @@ func init() {
 }
 
 var cr parse.ComprehensiveRules
+var crTpl = template.Must(template.ParseFiles("etc/cr.tpl"))
 
 func readFiles() {
 	file, err := os.Open("etc/C15.cr.txt")
@@ -43,5 +45,5 @@ func serveCR(req *restful.Request, resp *restful.Response) {
 		resp.WriteErrorString(http.StatusNotFound, "no rule with that title found")
 	}
 
-	resp.Write([]byte(rule.CompleteText()))
+	crTpl.Execute(resp, rule.CompleteText())
 }
