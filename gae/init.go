@@ -7,6 +7,7 @@ import (
 
 	"github.com/Manbeardo/mtgdocs.info/parse"
 	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/swagger"
 )
 
 func init() {
@@ -16,9 +17,19 @@ func init() {
 	ws.Route(ws.GET("/cr/").To(serveCR))
 	ws.Route(ws.GET("/cr/{Title}").
 		Param(ws.PathParameter("Title", "the title of the rule")).
+		Param(ws.QueryParameter("Display", "the display mode").AllowableValues(map[string]string{
+		"HTML": "HTML",
+		"TXT":  "TXT",
+		"JSON": "JSON",
+	}).DefaultValue("HTML")).
 		To(serveCR))
 
 	restful.Add(ws)
+
+	swagger.InstallSwaggerService(swagger.Config{
+		WebServices: restful.DefaultContainer.RegisteredWebServices(),
+		ApiPath:     "/apidocs.json",
+	})
 }
 
 var cr parse.ComprehensiveRules

@@ -4,5 +4,7 @@ runtime: go
 api_version: go1
 
 handlers:
+- url: /apidocs
+  static_dir: etc/swagger-ui
 - url: /.*
   script: _go_app
