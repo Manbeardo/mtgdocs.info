@@ -1,7 +1,9 @@
 {{define "rule"}}
     {{$rule := .}}
     {{if ne .Title "HEAD"}}
-        <dt>{{.Title}}</dt>
+        <dt>
+            <a href="/cr/{{.Title}}">{{.Title}}</a>
+        </dt>
         <dd>{{.Body}}</dd>
         {{range .Notes}}
             <dd>{{.}}</dd>
