@@ -2,10 +2,10 @@ package gae
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"text/template"
 
 	"github.com/Manbeardo/mtgdocs.info/parse"
 	"github.com/emicklei/go-restful"
@@ -37,7 +37,16 @@ func init() {
 }
 
 var cr parse.ComprehensiveRules
-var crTpl = template.Must(template.ParseFiles("etc/cr.tpl"))
+var funcMap = template.FuncMap{
+	"sum": func(values ...int) int {
+		sum := 0
+		for _, val := range values {
+			sum += val
+		}
+		return sum
+	},
+}
+var crTpl = template.Must(template.New("cr.tpl").Funcs(funcMap).ParseFiles("etc/cr.tpl"))
 var index []byte
 
 func readFiles() {
@@ -80,9 +89,9 @@ func serveCR(req *restful.Request, resp *restful.Response) {
 	}
 
 	if display == "HTML" {
-		crTpl.Execute(resp, rule.CompleteText()) // TODO: make a better HTML template
+		crTpl.Execute(resp, rule)
 	} else if display == "TXT" {
-		crTpl.Execute(resp, rule.CompleteText())
+		resp.Write([]byte(rule.CompleteText()))
 	} else if display == "JSON" {
 		resp.WriteAsJson(rule)
 	}
