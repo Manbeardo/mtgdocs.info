@@ -89,7 +89,9 @@ func serveCR(req *restful.Request, resp *restful.Response) {
 	}
 
 	if display == "HTML" {
-		crTpl.Execute(resp, rule)
+		if err := crTpl.Execute(resp, rule); err != nil {
+			panic(err)
+		}
 	} else if display == "TXT" {
 		resp.Write([]byte(rule.CompleteText()))
 	} else if display == "JSON" {

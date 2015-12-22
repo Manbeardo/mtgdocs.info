@@ -1,7 +1,7 @@
 {{define "rule"}}
     {{$rule := .}}
     {{if ne .Title "HEAD"}}
-        <dt>
+        <dt id="{{.Title}}">
             <a href="/cr/{{.Title}}">{{.Title}}</a>
         </dt>
         <dd>{{.Body}}</dd>
@@ -53,12 +53,32 @@
 }
 </style>
 </head>
+<title>
+{{if ne .Title "HEAD"}}
+    {{.Title}} - MTG CR
+{{else}}
+    MTG Comprehensive Rules
+{{end}}
+</title>
 <body>
-    <br/>
-    <div class="container well">
-        <dl class="dl-horizontal" id="dl-toplevel">
-            {{template "rule" .}}
-        </dl>
+    <div class="container">
+        <h3><a href="/cr" class="text-muted">Magic: the Gathering Comprehensive Rules</a></h3>
+        <div class="well">
+            <dl class="dl-horizontal" id="dl-toplevel">
+                <dt>
+                    <div class="pull-left">
+                    {{if .Parent}}
+                        {{if eq .Parent.Title "HEAD"}}
+                            <a href="/cr">..</a>
+                        {{else}}
+                            <a href="/cr/{{.Parent.Title}}">..</a>
+                        {{end}}
+                    {{end}}
+                    </div>
+                </dt><dd></dd>
+                {{template "rule" .}}
+            </dl>
+        </div>
     </div>
 </body>
 </html>
